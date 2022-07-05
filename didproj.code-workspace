@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "did-sdk"
+		},
+		{
+			"path": "did-wallet"
+		},
+		{
+			"path": "did-server"
+		}
+	],
+	"settings": {}
+}
