@@ -18,9 +18,12 @@ const ACTION_PATH = {
   PROOF: 'proof-of-work-challenge',
 }
 
-export class IonDidCreater implements IDidCreater {
+/**
+ * DID生成(ION Challengeあり版)
+ */
+export class IonDidCreaterWithChallenge implements IDidCreater {
   get key() {
-    return 'ion-microsoft'
+    return 'ion-with-challenge'
   }
 
   async create({
@@ -74,7 +77,6 @@ export class IonDidCreater implements IDidCreater {
       urljoin(endpointUrl, ACTION_PATH.OPERATIONS),
       JSON.stringify(createRequest)
     )
-    // console.debug('createResponse: %o', createResponse)
 
     // DidObjectにして返却
     return DidObject.createByDidString(
@@ -156,5 +158,99 @@ export class IonDidCreater implements IDidCreater {
       .map(() => Math.floor(Math.random() * 16).toString(16))
       .join('')
     return Buffer.from(randomString).toString('hex')
+  }
+}
+
+/**
+ * DID生成(ION Challengeなし版)
+ */
+export class IonDidCreaterNoChallenge implements IDidCreater {
+  get key() {
+    return 'ion-no-challenge'
+  }
+
+  async create({
+    endpointUrl,
+    signingKeyId,
+    key,
+  }: {
+    /** エンドポイントURL */
+    endpointUrl: string
+    /** 署名鍵ID */
+    signingKeyId: string
+    /** IDidCreater登録キー */
+    key?: string
+  }) {
+    console.debug(
+      'IonDidCreater.create: %s, %s, %s',
+      endpointUrl,
+      signingKeyId,
+      key
+    )
+
+    // 鍵生成
+    const recoveryKeyPair = await IonKey.generateEs256kOperationKeyPair()
+    const updateKeyPair = await IonKey.generateEs256kOperationKeyPair()
+    const signingDocKeyPair = await IonKey.generateEs256kDidDocumentKeyPair({
+      id: signingKeyId,
+      purposes: [
+        IonPublicKeyPurpose.Authentication,
+        IonPublicKeyPurpose.AssertionMethod,
+      ],
+    })
+
+    // DID作成リクエスト
+    const input = {
+      document: {
+        publicKeys: [signingDocKeyPair[0]],
+      },
+      updateKey: updateKeyPair[0],
+      recoveryKey: recoveryKeyPair[0],
+    }
+    const createRequest = IonRequest.createCreateRequest(input)
+    const longFormDid = IonDid.createLongFormDid(input)
+    const longFormSuffixData = longFormDid.substring(
+      longFormDid.lastIndexOf(':') + 1
+    )
+    console.debug('createRequest: %o', createRequest)
+
+    // エンドポイントへリクエスト
+    const createResponse = await this.submitIonRequest(
+      urljoin(endpointUrl, ACTION_PATH.OPERATIONS),
+      JSON.stringify(createRequest)
+    )
+
+    // DidObjectにして返却
+    return DidObject.createByDidString(
+      createResponse.didDocument.id,
+      longFormSuffixData,
+      signingKeyId,
+      createResponse.didDocumentMetadata.method.published,
+      {
+        signing: {
+          public: signingDocKeyPair[0].publicKeyJwk as JwkEs256k,
+          private: signingDocKeyPair[1],
+        },
+        update: { public: updateKeyPair[0], private: updateKeyPair[1] },
+        recovery: { public: recoveryKeyPair[0], private: recoveryKeyPair[1] },
+      }
+    )
+  }
+
+  private async submitIonRequest(
+    solveChallengeUri: string,
+    requestBody: string
+  ) {
+    // Createリクエスト
+    const createResponse = await axios.post(solveChallengeUri, requestBody, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    if (createResponse.status !== 200) {
+      throw Error(createResponse.statusText)
+    }
+    console.debug('createResponse: %o', createResponse.data)
+    return createResponse.data as DidDocument
   }
 }

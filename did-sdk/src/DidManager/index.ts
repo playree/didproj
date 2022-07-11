@@ -1,13 +1,25 @@
 import { DidDocument, JwkEs256k } from './didDocument'
-import { DidKeyPair, DidManager, DidObject, IDidCreater } from './didManager'
-import { IonDidCreater } from './ionDidManager'
+import {
+  DidKeyPair,
+  DidManager,
+  DidObject,
+  IDidCreater,
+  IDidResolver,
+} from './didManager'
+import {
+  IonDidCreaterNoChallenge,
+  IonDidCreaterWithChallenge,
+} from './ionDidManager'
 
 /**
  * デフォルト設定のDidManagerを生成する。
  * カスタイムする場合は new DidManager() で生成してください。
  */
 const newDefaultDidManager = () => {
-  return new DidManager([new IonDidCreater()])
+  return new DidManager([
+    new IonDidCreaterWithChallenge(),
+    new IonDidCreaterNoChallenge(),
+  ])
 }
 
 export {
@@ -18,5 +30,7 @@ export {
   newDefaultDidManager,
   DidObject,
   IDidCreater,
-  IonDidCreater,
+  IDidResolver,
+  IonDidCreaterNoChallenge,
+  IonDidCreaterWithChallenge,
 }

@@ -1,4 +1,4 @@
-import { JwkEs256k } from './didDocument'
+import { DidDocument, JwkEs256k } from './didDocument'
 
 /**
  * 秘密鍵＆公開鍵のペア
@@ -93,6 +93,20 @@ export interface IDidCreater {
     endpointUrl: string
     signingKeyId: string
   }): Promise<DidObject>
+}
+
+/**
+ * DID解決インターフェース
+ */
+export interface IDidResolver {
+  get key(): string
+  resolve({
+    endpointUrl,
+    did,
+  }: {
+    endpointUrl: string
+    did: string
+  }): Promise<DidDocument>
 }
 
 /**
