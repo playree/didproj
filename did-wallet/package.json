@@ -20,7 +20,7 @@
     "@types/react-router-dom": "^5.3.3",
     "@types/uuid": "^8.3.4",
     "dexie": "^3.2.2",
-    "did-sdk": "../did-sdk",
+    "did-sdk": "link:../did-sdk",
     "node-polyfill-webpack-plugin": "^2.0.0",
     "query-string": "^7.1.1",
     "react": "^18.2.0",

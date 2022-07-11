@@ -1,16 +1,10 @@
-import {
-  IonDid,
-  IonDocumentModel,
-  IonKey,
-  IonRequest,
-  IonPublicKeyPurpose,
-  JwkEs256k,
-} from '@decentralized-identity/ion-sdk'
+import { JwkEs256k } from '@decentralized-identity/ion-sdk'
 import { dexieDb } from '../dexie'
 import urljoin from 'url-join'
 import base64url from 'base64url'
 import { BinaryLike, createHash } from 'crypto'
 import { ES256K } from '@transmute/did-key-secp256k1'
+import { DidObject, DidKeyPair } from 'did-sdk'
 
 export type JWTObject = {
   header: any
@@ -24,79 +18,6 @@ export class DidTool {
     IDENTIFIERS: 'identifiers',
 
     PROOF: 'proof-of-work-challenge',
-  }
-
-  static async create(url: string, needChallenge: boolean, keyid = '') {
-    const signingKeyId = keyid || VerifiableTool.generateKid()
-
-    // 鍵生成
-    const [recoveryKey, recoveryPrivateKey] =
-      await IonKey.generateEs256kOperationKeyPair()
-    const [updateKey, updatePrivateKey] =
-      await IonKey.generateEs256kOperationKeyPair()
-    const [signingKey, signingPrivateKey] =
-      await IonKey.generateEs256kDidDocumentKeyPair({ id: signingKeyId })
-
-    // 追加属性
-    signingKey.purposes = [IonPublicKeyPurpose.Authentication]
-    const publicKeys = [signingKey]
-
-    // DID作成リクエスト
-    const document: IonDocumentModel = {
-      publicKeys,
-    }
-    const input = { recoveryKey, updateKey, document }
-    const createRequest = IonRequest.createCreateRequest(input)
-    const longFormDid = IonDid.createLongFormDid(input)
-    const longFormSuffixData = longFormDid.substring(
-      longFormDid.lastIndexOf(':') + 1
-    )
-
-    // const resText = needChallenge ?
-    //   await IonProofOfWork.submitIonRequest(
-    //     urljoin(url, DidTool.ACTION_PATH.PROOF),
-    //     urljoin(url, DidTool.ACTION_PATH.OPERATIONS),
-    //     JSON.stringify(createRequest)
-    //   ) :
-    //   await DidTool._submitIonRequest(
-    //     urljoin(url, DidTool.ACTION_PATH.OPERATIONS),
-    //     JSON.stringify(createRequest)
-    //   );
-    const resText = await DidTool._submitIonRequest(
-      urljoin(url, DidTool.ACTION_PATH.OPERATIONS),
-      JSON.stringify(createRequest)
-    )
-    if (!resText) {
-      return null
-    }
-
-    // 各種パラメータ生成
-    const resObj = JSON.parse(resText)
-    const did: string = resObj.didDocument.id
-    const didParts = did.split(':')
-    const scheme = didParts[0]
-    const didSuffix = didParts[didParts.length - 1]
-    let method = didParts[1]
-    if (didParts.length === 4) {
-      method += ':' + didParts[2]
-    }
-    const published = resObj.didDocumentMetadata.method.published
-
-    const didModel = new DidModel(
-      scheme,
-      method,
-      didSuffix,
-      longFormSuffixData,
-      signingKeyId,
-      published
-    )
-
-    return {
-      didModel,
-      signingPrivateKey,
-      recoveryPrivateKey,
-      updatePrivateKey,
-    }
   }
 
   static async _submitIonRequest(
@@ -155,7 +76,8 @@ export class DidTool {
         didModel.didSuffix,
         didModel.longFormSuffixData,
         didModel.signingKeyId,
-        didModel.published
+        didModel.published,
+        didModel.keys
       )
     }
     return null
@@ -185,15 +107,8 @@ export class PrivateKeyTool {
   }
 }
 
-export class DidModel {
-  // did = scheme:method:didSuffix:longFormSuffixData
-  id: string
-  scheme: string
-  method: string
-  didSuffix: string
-  longFormSuffixData: string
-  signingKeyId: string
-  published: boolean
+export class DidModel extends DidObject {
+  public id: string
 
   constructor(
     scheme: string,
@@ -201,39 +116,38 @@ export class DidModel {
     didSuffix: string,
     longFormSuffixData: string,
     signingKeyId: string,
-    published = false
+    published: boolean,
+    keys: {
+      signing: DidKeyPair
+      update?: DidKeyPair
+      recovery?: DidKeyPair
+    }
   ) {
+    super(
+      scheme,
+      method,
+      didSuffix,
+      longFormSuffixData,
+      signingKeyId,
+      published,
+      keys
+    )
     this.id = DidModel.ID
-    this.scheme = scheme
-    this.method = method
-    this.didSuffix = didSuffix
-    this.longFormSuffixData = longFormSuffixData
-    this.signingKeyId = signingKeyId
-    this.published = published
-  }
-
-  get did() {
-    return this.published ? this.didShort : this.didLong
-  }
-
-  get didShort() {
-    return [this.scheme, this.method, this.didSuffix].join(':')
-  }
-
-  get didLong() {
-    return [
-      this.scheme,
-      this.method,
-      this.didSuffix,
-      this.longFormSuffixData,
-    ].join(':')
-  }
-
-  get kid() {
-    return `${this.did}#${this.signingKeyId}`
   }
 
   static ID = 'onlyid'
+
+  static createByDidObject(didObject: DidObject) {
+    return new DidModel(
+      didObject.scheme,
+      didObject.method,
+      didObject.didSuffix,
+      didObject.longFormSuffixData,
+      didObject.signingKeyId,
+      didObject.published,
+      didObject.keys
+    )
+  }
 }
 
 export class PrivateKeyModel {

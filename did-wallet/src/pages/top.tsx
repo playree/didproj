@@ -20,7 +20,8 @@ import {
 import { Create as IconCreate } from '@mui/icons-material'
 
 import { Settings } from '../helpers/settings'
-import { DidTool, PrivateKeyTool, VcTool } from '../helpers/didTools'
+import { DidModel, DidTool, PrivateKeyTool, VcTool } from '../helpers/didTools'
+import { newDefaultDidManager } from 'did-sdk'
 import {
   useNowLoadingContext,
   useSettingsContext,
@@ -80,36 +81,39 @@ export const PageTop = () => {
 
     // DID発行
     try {
-      const didInfo = await DidTool.create(
-        settingsContext.settings.urlOperation,
-        settingsContext.settings.needChallenge,
-        'sign-primary-key'
-      )
+      const didMgr = newDefaultDidManager()
+      const didObject = await didMgr.createDid({
+        endpointUrl: settingsContext.settings.urlOperation,
+        signingKeyId: 'sign-primary-key',
+      })
 
-      if (didInfo) {
-        // 発行した各種情報を保存
-        await PrivateKeyTool.save(
-          didInfo.didModel.signingKeyId,
-          didInfo.signingPrivateKey
-        )
+      // 発行した各種情報を保存
+      await PrivateKeyTool.save(
+        didObject.signingKeyId,
+        didObject.keys.signing.private
+      )
+      if (didObject.keys.recovery) {
         await PrivateKeyTool.save(
           PrivateKeyTool.RESERVE_ID.RECOVERY,
-          didInfo.recoveryPrivateKey
+          didObject.keys.recovery.private
         )
+      }
+      if (didObject.keys.update) {
         await PrivateKeyTool.save(
           PrivateKeyTool.RESERVE_ID.UPDATE,
-          didInfo.updatePrivateKey
+          didObject.keys.update.private
         )
-        await DidTool.save(didInfo.didModel)
-
-        // コンテキストにも反映
-        didContext.setDidModel(didInfo.didModel)
-
-        setOpenDidCreated(true)
-      } else {
-        alert('DIDの発行に失敗しました。')
       }
-    } catch {
+
+      const didModel = DidModel.createByDidObject(didObject)
+      await DidTool.save(didModel)
+
+      // コンテキストにも反映
+      didContext.setDidModel(didModel)
+
+      setOpenDidCreated(true)
+    } catch (e) {
+      console.error(e)
       alert('DIDの発行に失敗しました。')
     }
 

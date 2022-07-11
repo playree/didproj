@@ -1,8 +1,17 @@
-import axios from 'axios'
+import {
+  DidKeyPair,
+  DidManager,
+  DidObject,
+  IDidCreater,
+  IonDidCreater,
+  newDefaultDidManager,
+} from './DidManager/'
 
-export class DidTool {
-  static async resolve(url: string) {
-    const result = await axios.get(url)
-    return result
-  }
+export {
+  DidKeyPair,
+  DidManager,
+  DidObject,
+  IDidCreater,
+  IonDidCreater,
+  newDefaultDidManager,
 }
