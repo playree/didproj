@@ -1,5 +1,6 @@
-import * as React from 'react'
-import { Navigate } from 'react-router-dom'
+import { VcModel, VcTool } from '../helpers/didTools'
+import { useDidContext } from '../layout/sideMenuLayout'
+import { ExpandMore as IconExpandMore } from '@mui/icons-material'
 import {
   Typography,
   Container,
@@ -8,9 +9,8 @@ import {
   AccordionSummary,
   AccordionDetails,
 } from '@mui/material'
-import { ExpandMore as IconExpandMore } from '@mui/icons-material'
-import { useDidContext } from '../layout/sideMenuLayout'
-import { VcModel, VcTool } from '../helpers/didTools'
+import * as React from 'react'
+import { Navigate } from 'react-router-dom'
 
 export const PageVc = () => {
   const didContext = useDidContext()
@@ -27,7 +27,7 @@ export const PageVc = () => {
     setVcList(vcList)
   }
 
-  if (!didContext.didModel) {
+  if (!didContext.didManage.didModel) {
     return <Navigate to="/" replace />
   }
 

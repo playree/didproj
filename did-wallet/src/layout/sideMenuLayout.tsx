@@ -1,6 +1,16 @@
-import { createContext, useContext, useState } from 'react'
-import { Outlet, NavLink } from 'react-router-dom'
-import { styled, useTheme } from '@mui/material/styles'
+import pkg from '../../package.json'
+import { DidModel } from '../helpers/didTools'
+import { Settings } from '../helpers/settings'
+import {
+  Menu as IconMenu,
+  ChevronLeft as IconChevronLeft,
+  ChevronRight as IconChevronRight,
+  Home as IconHome,
+  QrCode as IconQrCode,
+  Key as IconKey,
+  CardMembership as IconCardMembership,
+  Settings as IconSettings,
+} from '@mui/icons-material'
 import {
   Box,
   Drawer,
@@ -17,20 +27,10 @@ import {
   CircularProgress,
 } from '@mui/material'
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar'
-import {
-  Menu as IconMenu,
-  ChevronLeft as IconChevronLeft,
-  ChevronRight as IconChevronRight,
-  Home as IconHome,
-  QrCode as IconQrCode,
-  Key as IconKey,
-  CardMembership as IconCardMembership,
-  Settings as IconSettings,
-} from '@mui/icons-material'
-import pkg from '../../package.json'
-
-import { Settings } from '../helpers/settings'
-import { DidModel } from '../helpers/didTools'
+import { styled, useTheme } from '@mui/material/styles'
+import { DidManager } from 'did-sdk'
+import { createContext, useContext, useState } from 'react'
+import { Outlet, NavLink } from 'react-router-dom'
 
 const drawerWidth = 200
 
@@ -59,9 +59,13 @@ export const useSettingsContext = () => {
 }
 
 // DID情報のコンテキスト
-export type DidContextType = {
+interface DidManage {
   didModel: DidModel | null
-  setDidModel: (didModel: DidModel | null) => void
+  didMgr: DidManager | null
+}
+export type DidContextType = {
+  didManage: DidManage
+  setDidManage: (didManage: DidManage) => void
 }
 const DidContext = createContext<DidContextType>({} as DidContextType)
 export const useDidContext = () => {
@@ -128,7 +132,10 @@ export const SideMenuLayout = () => {
   const [open, setOpen] = useState(false)
   const [isNowLoading, setNowLoading] = useState(false)
   const [settings, setSettings] = useState<Settings | null>(null)
-  const [didModel, setDidModel] = useState<DidModel | null>(null)
+  const [didManage, setDidManage] = useState<DidManage>({
+    didModel: null,
+    didMgr: null,
+  })
 
   const handleDrawerOpen = () => {
     setOpen(true)
@@ -143,7 +150,10 @@ export const SideMenuLayout = () => {
     setNowLoading,
   }
   const settingsValue: SettingsContextType = { settings, setSettings }
-  const didValue: DidContextType = { didModel, setDidModel }
+  const didValue: DidContextType = {
+    didManage,
+    setDidManage,
+  }
 
   return (
     <Box sx={{ display: 'flex' }}>

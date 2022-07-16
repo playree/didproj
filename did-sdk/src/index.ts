@@ -3,9 +3,10 @@ import {
   DidManager,
   DidObject,
   IDidCreater,
-  IonDidCreaterWithChallenge,
   IDidResolver,
-  newDefaultDidManager,
+  IonDidCreaterNoChallenge,
+  IonDidCreaterWithChallenge,
+  IonDidResolver,
 } from './DidManager/'
 
 export {
@@ -13,7 +14,8 @@ export {
   DidManager,
   DidObject,
   IDidCreater,
-  IonDidCreaterWithChallenge,
   IDidResolver,
-  newDefaultDidManager,
+  IonDidCreaterNoChallenge,
+  IonDidCreaterWithChallenge,
+  IonDidResolver,
 }

@@ -1,3 +1,6 @@
+import { ErrorWithLog } from '../common/utils'
+import { DidDocument, JwkEs256k } from './didDocument'
+import { DidObject, IDidCreater, IDidResolver } from './didManager'
 import {
   IonDid,
   IonKey,
@@ -8,42 +11,32 @@ import axios from 'axios'
 import { Buffer } from 'buffer'
 import { argon2id } from 'hash-wasm'
 import urljoin from 'url-join'
-import { DidDocument, JwkEs256k } from './didDocument'
-import { DidObject, IDidCreater } from './didManager'
-
-const ACTION_PATH = {
-  OPERATIONS: 'operations',
-  IDENTIFIERS: 'identifiers',
-
-  PROOF: 'proof-of-work-challenge',
-}
 
 /**
- * DID生成(ION Challengeあり版)
+ * DID Creater(ION Challengeあり版)
  */
 export class IonDidCreaterWithChallenge implements IDidCreater {
   get key() {
     return 'ion-with-challenge'
   }
 
-  async create({
-    endpointUrl,
-    signingKeyId,
-    key,
-  }: {
-    /** エンドポイントURL */
-    endpointUrl: string
-    /** 署名鍵ID */
-    signingKeyId: string
-    /** IDidCreater登録キー */
-    key?: string
-  }) {
-    console.debug(
-      'IonDidCreater.create: %s, %s, %s',
-      endpointUrl,
-      signingKeyId,
-      key
-    )
+  /**
+   *
+   * @param operationsUrl Operations URL
+   * @param challengeUrl Challenge URL
+   */
+  constructor(
+    public operationsUrl = 'https://beta.ion.msidentity.com/api/v1.0/operations',
+    public challengeUrl = 'https://beta.ion.msidentity.com/api/v1.0/proof-of-work-challenge'
+  ) {}
+
+  /**
+   *
+   * @param signingKeyId 署名鍵ID
+   * @returns DIDオブジェクト
+   */
+  async create(signingKeyId: string) {
+    console.debug('IonDidCreater.create: %s', signingKeyId)
 
     // 鍵生成
     const recoveryKeyPair = await IonKey.generateEs256kOperationKeyPair()
@@ -73,15 +66,14 @@ export class IonDidCreaterWithChallenge implements IDidCreater {
 
     // エンドポイントへリクエスト
     const createResponse = await this.submitIonRequest(
-      urljoin(endpointUrl, ACTION_PATH.PROOF),
-      urljoin(endpointUrl, ACTION_PATH.OPERATIONS),
+      this.challengeUrl,
+      this.operationsUrl,
       JSON.stringify(createRequest)
     )
 
     // DidObjectにして返却
     return DidObject.createByDidString(
-      createResponse.didDocument.id,
-      longFormSuffixData,
+      [createResponse.didDocument.id, longFormSuffixData].join(':'),
       signingKeyId,
       createResponse.didDocumentMetadata.method.published,
       {
@@ -103,7 +95,7 @@ export class IonDidCreaterWithChallenge implements IDidCreater {
     // Challengeリクエスト
     const challengeResponse = await axios.get(getChallengeUri)
     if (challengeResponse.status !== 200) {
-      throw Error(challengeResponse.statusText)
+      throw ErrorWithLog(challengeResponse.statusText)
     }
     console.debug('challengeResponse: %o', challengeResponse.data)
 
@@ -134,7 +126,7 @@ export class IonDidCreaterWithChallenge implements IDidCreater {
       Date.now() - startTime < validDuration
     )
     if (Date.now() - startTime > validDuration) {
-      throw Error('ValidDuration Over')
+      throw ErrorWithLog('ValidDuration Over')
     }
 
     // Createリクエスト
@@ -146,7 +138,7 @@ export class IonDidCreaterWithChallenge implements IDidCreater {
       },
     })
     if (createResponse.status !== 200) {
-      throw Error(createResponse.statusText)
+      throw ErrorWithLog(createResponse.statusText)
     }
     console.debug('createResponse: %o', createResponse.data)
     return createResponse.data as DidDocument
@@ -162,31 +154,26 @@ export class IonDidCreaterWithChallenge implements IDidCreater {
 }
 
 /**
- * DID生成(ION Challengeなし版)
+ * DID Creater(ION Challengeなし版)
  */
 export class IonDidCreaterNoChallenge implements IDidCreater {
   get key() {
     return 'ion-no-challenge'
   }
 
-  async create({
-    endpointUrl,
-    signingKeyId,
-    key,
-  }: {
-    /** エンドポイントURL */
-    endpointUrl: string
-    /** 署名鍵ID */
-    signingKeyId: string
-    /** IDidCreater登録キー */
-    key?: string
-  }) {
-    console.debug(
-      'IonDidCreater.create: %s, %s, %s',
-      endpointUrl,
-      signingKeyId,
-      key
-    )
+  /**
+   *
+   * @param operationsUrl Operations URL
+   */
+  constructor(public operationsUrl: string) {}
+
+  /**
+   *
+   * @param signingKeyId 署名鍵ID
+   * @returns DIDオブジェクト
+   */
+  async create(signingKeyId: string) {
+    console.debug('IonDidCreater.create: %s', signingKeyId)
 
     // 鍵生成
     const recoveryKeyPair = await IonKey.generateEs256kOperationKeyPair()
@@ -216,14 +203,13 @@ export class IonDidCreaterNoChallenge implements IDidCreater {
 
     // エンドポイントへリクエスト
     const createResponse = await this.submitIonRequest(
-      urljoin(endpointUrl, ACTION_PATH.OPERATIONS),
+      this.operationsUrl,
       JSON.stringify(createRequest)
     )
 
     // DidObjectにして返却
     return DidObject.createByDidString(
-      createResponse.didDocument.id,
-      longFormSuffixData,
+      [createResponse.didDocument.id, longFormSuffixData].join(':'),
       signingKeyId,
       createResponse.didDocumentMetadata.method.published,
       {
@@ -248,9 +234,36 @@ export class IonDidCreaterNoChallenge implements IDidCreater {
       },
     })
     if (createResponse.status !== 200) {
-      throw Error(createResponse.statusText)
+      throw ErrorWithLog(createResponse.statusText)
     }
     console.debug('createResponse: %o', createResponse.data)
     return createResponse.data as DidDocument
+  }
+}
+
+/**
+ * DID Resolver(ION)
+ */
+export class IonDidResolver implements IDidResolver {
+  get key() {
+    return 'ion'
+  }
+
+  /**
+   *
+   * @param identifiersUrl Identifiers URL
+   */
+  constructor(
+    public identifiersUrl = 'https://beta.discover.did.microsoft.com/1.0/identifiers'
+  ) {}
+
+  async resolve(did: string) {
+    const resolveResponse = await axios.get(urljoin(this.identifiersUrl, did))
+    if (resolveResponse.status !== 200) {
+      throw ErrorWithLog(resolveResponse.statusText)
+    }
+    console.debug('resolveResponse: %o', resolveResponse.data)
+
+    return resolveResponse.data as DidDocument
   }
 }

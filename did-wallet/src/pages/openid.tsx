@@ -1,5 +1,17 @@
-import * as React from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import {
+  VerifiableTool,
+  DidTool,
+  PrivateKeyTool,
+  VcTool,
+  JWTObject,
+  VcModel,
+} from '../helpers/didTools'
+import { Settings } from '../helpers/settings'
+import {
+  useDidContext,
+  useSettingsContext,
+  useNowLoadingContext,
+} from '../layout/sideMenuLayout'
 import {
   Typography,
   Container,
@@ -11,24 +23,12 @@ import {
   Avatar,
   Grid,
 } from '@mui/material'
-import * as QueryString from 'query-string'
-import {
-  VerifiableTool,
-  DidTool,
-  PrivateKeyTool,
-  VcTool,
-  JWTObject,
-  VcModel,
-} from '../helpers/didTools'
-import {
-  useDidContext,
-  useSettingsContext,
-  useNowLoadingContext,
-} from '../layout/sideMenuLayout'
-import * as uuid from 'uuid'
-import { useParams } from 'react-router'
 import base64url from 'base64url'
-import { Settings } from '../helpers/settings'
+import * as QueryString from 'query-string'
+import * as React from 'react'
+import { useParams } from 'react-router'
+import { useNavigate, useLocation } from 'react-router-dom'
+import * as uuid from 'uuid'
 
 // @todo
 const STATUS = {
@@ -84,10 +84,11 @@ export const PageOpenid = () => {
       settingsContext.setSettings(await Settings.load())
 
       // DIDの読み込み
-      const didModel = await DidTool.load()
-      if (didModel) {
-        didContext.setDidModel(didModel)
-      }
+      didContext.didManage.didModel = await DidTool.load()
+
+      // DID Manageのセット
+      didContext.setDidManage(didContext.didManage)
+
       setStatus(STATUS.START)
     }
   }
@@ -99,10 +100,10 @@ export const PageOpenid = () => {
       settingsContext.setSettings(await Settings.load())
 
       // DIDの読み込み
-      const didModel = await DidTool.load()
-      if (didModel) {
-        didContext.setDidModel(didModel)
-      }
+      didContext.didManage.didModel = await DidTool.load()
+
+      // DID Manageのセット
+      didContext.setDidManage(didContext.didManage)
 
       const requestUrl = base64url.decode(param)
       if (requestUrl.indexOf('openid://vc/') === 0) {
@@ -161,7 +162,7 @@ export const PageOpenid = () => {
     if (!settingsContext.settings) {
       return
     }
-    if (!didContext.didModel) {
+    if (!didContext.didManage.didModel) {
       return
     }
 
@@ -187,15 +188,13 @@ export const PageOpenid = () => {
       const tokenObj = await resToken.json()
       console.log(tokenObj)
 
-      // 自身の公開鍵を取得
-      // const didInfo = await DidTool.resolve(settingsContext.settings.urlResolve, didContext.didModel.did);
       const now = Math.floor(Date.now() / 1000)
 
       const reqVc = {
         header: {
           alg: 'ES256K',
           typ: 'JWT',
-          kid: didContext.didModel.kid,
+          kid: didContext.didManage.didModel.kid,
         },
         payload: {
           iss: 'xxx',
@@ -210,7 +209,7 @@ export const PageOpenid = () => {
 
       // 秘密鍵で署名
       const privateKeyModel = await PrivateKeyTool.load(
-        didContext.didModel.signingKeyId
+        didContext.didManage.didModel.signingKeyId
       )
       const reqVcJws = await VerifiableTool.signJws(
         reqVc.header,
@@ -437,10 +436,11 @@ export const PageOpenid = () => {
   }
 
   const addVC = async () => {
-    if (!settingsContext.settings) {
-      return
-    }
-    if (!didContext.didModel) {
+    if (
+      !settingsContext.settings ||
+      !didContext.didManage.didMgr ||
+      !didContext.didManage.didModel
+    ) {
       return
     }
 
@@ -450,9 +450,8 @@ export const PageOpenid = () => {
       nowLoadingContext.setNowLoading(true)
 
       // 自身の公開鍵を取得
-      const didInfo = await DidTool.resolve(
-        settingsContext.settings.urlResolve,
-        didContext.didModel.did
+      const resolveDid = await didContext.didManage.didMgr.resolveDid(
+        didContext.didManage.didModel.did
       )
       const now = Math.floor(Date.now() / 1000)
 
@@ -460,7 +459,7 @@ export const PageOpenid = () => {
         header: {
           alg: 'ES256K',
           typ: 'JWT',
-          kid: didContext.didModel.kid,
+          kid: didContext.didManage.didModel.kid,
         },
         payload: {
           iss: 'https://self-issued.me',
@@ -470,14 +469,14 @@ export const PageOpenid = () => {
           exp: now + 600,
           sub_jwk: JSON.parse(
             JSON.stringify(
-              didInfo.didDocument.verificationMethod[0].publicKeyJwk
+              resolveDid.didDocument.verificationMethod[0].publicKeyJwk
             )
           ),
           sub: VerifiableTool.generateSub(
-            didInfo.didDocument.verificationMethod[0].publicKeyJwk
+            resolveDid.didDocument.verificationMethod[0].publicKeyJwk
           ),
           jti: uuid.v4(),
-          did: didContext.didModel.did,
+          did: didContext.didManage.didModel.did,
           pin: VerifiableTool.generateHash(inputPin),
           attestations: {
             idTokens: {
@@ -498,7 +497,7 @@ export const PageOpenid = () => {
 
       // 秘密鍵で署名
       const privateKeyModel = await PrivateKeyTool.load(
-        didContext.didModel.signingKeyId
+        didContext.didManage.didModel.signingKeyId
       )
       const credentialRequestJws = await VerifiableTool.signJws(
         credentialRequest.header,
@@ -554,7 +553,7 @@ export const PageOpenid = () => {
     if (!settingsContext.settings) {
       return
     }
-    if (!didContext.didModel) {
+    if (!didContext.didManage.didModel) {
       return
     }
 
@@ -569,12 +568,12 @@ export const PageOpenid = () => {
         header: {
           alg: 'ES256K',
           typ: 'JWT',
-          kid: didContext.didModel.kid,
+          kid: didContext.didManage.didModel.kid,
         },
         payload: {
           iss: 'https://self-issued.me/v2/openid-vc',
           aud: vpProcess.credentialOffer.payload.client_id,
-          sub: didContext.didModel.did,
+          sub: didContext.didManage.didModel.did,
           iat: now,
           exp: now + 600,
           nonce: vpProcess.credentialOffer.payload.nonce,
@@ -603,7 +602,7 @@ export const PageOpenid = () => {
 
       // 秘密鍵で署名
       const privateKeyModel = await PrivateKeyTool.load(
-        didContext.didModel.signingKeyId
+        didContext.didManage.didModel.signingKeyId
       )
       const idTokenJws = await VerifiableTool.signJws(
         idToken.header,
@@ -615,10 +614,10 @@ export const PageOpenid = () => {
         header: {
           alg: 'ES256K',
           typ: 'JWT',
-          kid: didContext.didModel.kid,
+          kid: didContext.didManage.didModel.kid,
         },
         payload: {
-          iss: didContext.didModel.did,
+          iss: didContext.didManage.didModel.did,
           aud: vpProcess.credentialOffer.payload.client_id,
           iat: now,
           nbf: now,
@@ -635,7 +634,7 @@ export const PageOpenid = () => {
       console.log(vpToken)
 
       // 秘密鍵で署名
-      // const privateKeyModel = await PrivateKeyTool.load(didContext.didModel.signingKeyId);
+      // const privateKeyModel = await PrivateKeyTool.load(didContext.didManage.didModel.signingKeyId);
       const vpTokenJws = await VerifiableTool.signJws(
         vpToken.header,
         vpToken.payload,
@@ -673,10 +672,11 @@ export const PageOpenid = () => {
   }
 
   const sendVP2 = async () => {
-    if (!settingsContext.settings) {
-      return
-    }
-    if (!didContext.didModel) {
+    if (
+      !settingsContext.settings ||
+      !didContext.didManage.didMgr ||
+      !didContext.didManage.didModel
+    ) {
       return
     }
 
@@ -686,9 +686,8 @@ export const PageOpenid = () => {
       nowLoadingContext.setNowLoading(true)
 
       // 自身の公開鍵を取得
-      const didInfo = await DidTool.resolve(
-        settingsContext.settings.urlResolve,
-        didContext.didModel.did
+      const resolveDid = await didContext.didManage.didMgr.resolveDid(
+        didContext.didManage.didModel.did
       )
       const now = Math.floor(Date.now() / 1000)
 
@@ -696,17 +695,17 @@ export const PageOpenid = () => {
         header: {
           alg: 'ES256K',
           typ: 'JWT',
-          kid: didContext.didModel.kid,
+          kid: didContext.didManage.didModel.kid,
         },
         payload: {
           iss: 'https://self-issued.me/v2',
           aud: vpProcess.credentialOffer.payload.client_id,
           sub: VerifiableTool.generateSub(
-            didInfo.didDocument.verificationMethod[0].publicKeyJwk
+            resolveDid.didDocument.verificationMethod[0].publicKeyJwk
           ),
           sub_jwk: JSON.parse(
             JSON.stringify(
-              didInfo.didDocument.verificationMethod[0].publicKeyJwk
+              resolveDid.didDocument.verificationMethod[0].publicKeyJwk
             )
           ),
           iat: now,
@@ -737,7 +736,7 @@ export const PageOpenid = () => {
 
       // 秘密鍵で署名
       const privateKeyModel = await PrivateKeyTool.load(
-        didContext.didModel.signingKeyId
+        didContext.didManage.didModel.signingKeyId
       )
       const idTokenJws = await VerifiableTool.signJws(
         idToken.header,
@@ -749,14 +748,14 @@ export const PageOpenid = () => {
         header: {
           alg: 'ES256K',
           typ: 'JWT',
-          kid: didContext.didModel.kid,
+          kid: didContext.didManage.didModel.kid,
         },
         payload: {
           '@context': ['https://www.w3.org/2018/credentials/v1'],
           type: ['VerifiablePresentation'],
           verifiableCredential: [vpProcess.vcList[0].vc.payload],
           id: 'ebc6f1c2',
-          holder: didContext.didModel.did,
+          holder: didContext.didManage.didModel.did,
           proof: {
             type: 'Ed25519Signature2018',
             created: new Date().toISOString(),
@@ -764,7 +763,7 @@ export const PageOpenid = () => {
             domain: vpProcess.credentialOffer.payload.client_id,
             jws: vpProcess.vcList[0].vc.jws,
             proofPurpose: 'authentication',
-            verificationMethod: didContext.didModel.kid,
+            verificationMethod: didContext.didManage.didModel.kid,
           },
         },
       }
@@ -772,7 +771,7 @@ export const PageOpenid = () => {
       console.log(vpToken)
 
       // 秘密鍵で署名
-      // const privateKeyModel = await PrivateKeyTool.load(didContext.didModel.signingKeyId);
+      // const privateKeyModel = await PrivateKeyTool.load(didContext.didManage.didModel.signingKeyId);
       const vpTokenJws = await VerifiableTool.signJws(
         vpToken.header,
         vpToken.payload,

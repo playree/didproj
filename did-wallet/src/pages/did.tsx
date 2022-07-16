@@ -1,5 +1,6 @@
-import * as React from 'react'
-import { Navigate } from 'react-router-dom'
+import { PrivateKeyTool } from '../helpers/didTools'
+import { useDidContext } from '../layout/sideMenuLayout'
+import { ExpandMore as IconExpandMore } from '@mui/icons-material'
 import {
   Typography,
   Container,
@@ -8,9 +9,8 @@ import {
   AccordionSummary,
   AccordionDetails,
 } from '@mui/material'
-import { ExpandMore as IconExpandMore } from '@mui/icons-material'
-import { useDidContext } from '../layout/sideMenuLayout'
-import { PrivateKeyTool } from '../helpers/didTools'
+import * as React from 'react'
+import { Navigate } from 'react-router-dom'
 
 export const PageDid = () => {
   const didContext = useDidContext()
@@ -27,11 +27,14 @@ export const PageDid = () => {
   })
 
   const setup = async () => {
-    if (didContext.didModel) {
+    if (didContext.didManage.didModel) {
       setPrivateKeys({
         signing: JSON.stringify(
-          (await PrivateKeyTool.load(didContext.didModel.signingKeyId))
-            ?.privateKey,
+          (
+            await PrivateKeyTool.load(
+              didContext.didManage.didModel.signingKeyId
+            )
+          )?.privateKey,
           null,
           2
         ),
@@ -51,7 +54,7 @@ export const PageDid = () => {
     }
   }
 
-  if (!didContext.didModel) {
+  if (!didContext.didManage.didModel) {
     return <Navigate to="/" replace />
   }
 
@@ -71,7 +74,7 @@ export const PageDid = () => {
               fullWidth
               multiline
               maxRows={8}
-              value={didContext.didModel.didLong}
+              value={didContext.didManage.didModel.didLong}
               InputProps={{
                 readOnly: true,
                 sx: { fontSize: '12px' },

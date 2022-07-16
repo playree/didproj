@@ -1,4 +1,6 @@
+import { ErrorWithLog } from '../common/utils'
 import { DidDocument, JwkEs256k } from './didDocument'
+import base64url from 'base64url'
 
 /**
  * 秘密鍵＆公開鍵のペア
@@ -29,9 +31,34 @@ export class DidObject {
     }
   ) {}
 
+  static parseDid(didString: string) {
+    const didParts = didString.split(':')
+    const scheme = didParts[0]
+    let longFormSuffixData = ''
+
+    let lastIndex = didParts.length - 1
+    if (lastIndex > 2) {
+      try {
+        // JSON形式かチェック
+        JSON.parse(base64url.decode(didParts[lastIndex]))
+        // JSON形式であれば、DidLongとして処理
+        longFormSuffixData = didParts[lastIndex]
+        lastIndex--
+      } catch {}
+    }
+    const didSuffix = didParts[lastIndex]
+    const method = didParts.slice(1, lastIndex).join(':')
+
+    return {
+      scheme,
+      method,
+      didSuffix,
+      longFormSuffixData,
+    }
+  }
+
   static createByDidString(
-    didSort: string,
-    longFormSuffixData: string,
+    didString: string,
     signingKeyId: string,
     published: boolean,
     keys: {
@@ -40,14 +67,8 @@ export class DidObject {
       recovery?: DidKeyPair
     }
   ) {
-    const didParts = didSort.split(':')
-    const scheme = didParts[0]
-    const didSuffix = didParts[didParts.length - 1]
-    let method = didParts[1]
-    if (didParts.length === 4) {
-      method += ':' + didParts[2]
-    }
-
+    const { scheme, method, didSuffix, longFormSuffixData } =
+      DidObject.parseDid(didString)
     return new DidObject(
       scheme,
       method,
@@ -86,13 +107,7 @@ export class DidObject {
  */
 export interface IDidCreater {
   get key(): string
-  create({
-    endpointUrl,
-    signingKeyId,
-  }: {
-    endpointUrl: string
-    signingKeyId: string
-  }): Promise<DidObject>
+  create(signingKeyId: string): Promise<DidObject>
 }
 
 /**
@@ -100,13 +115,7 @@ export interface IDidCreater {
  */
 export interface IDidResolver {
   get key(): string
-  resolve({
-    endpointUrl,
-    did,
-  }: {
-    endpointUrl: string
-    did: string
-  }): Promise<DidDocument>
+  resolve(did: string): Promise<DidDocument>
 }
 
 /**
@@ -114,42 +123,54 @@ export interface IDidResolver {
  */
 export class DidManager {
   private didCreaterMap: Record<string, IDidCreater>
-  private didCreaterDefault: IDidCreater | null
+  private didCreaterDefaultKey: string
+  private didResolverMap: Record<string, IDidResolver>
 
-  constructor(createrList: IDidCreater[]) {
+  constructor(createrList: IDidCreater[], resolverList: IDidResolver[]) {
     // CreaterMapの作成
     this.didCreaterMap = {}
-    this.didCreaterDefault = createrList ? createrList[0] : null
+    this.didCreaterDefaultKey = createrList ? createrList[0].key : ''
     for (const didCreater of createrList) {
       this.didCreaterMap[didCreater.key] = didCreater
+    }
+
+    // ResolverMapの作成
+    this.didResolverMap = {}
+    for (const didResolver of resolverList) {
+      this.didResolverMap[didResolver.key] = didResolver
     }
   }
 
   /**
    *
+   * @param __namedParameters.signingKeyId 署名鍵ID
+   * @param __namedParameters.signingKeyId IDidCreater登録キー
+   * @returns
    */
-  createDid({
-    endpointUrl,
-    signingKeyId,
-    key,
-  }: {
-    /** エンドポイントURL */
-    endpointUrl: string
-    /** 署名鍵ID */
-    signingKeyId: string
-    /** IDidCreater登録キー */
-    key?: string
-  }) {
+  createDid({ signingKeyId, key }: { signingKeyId: string; key?: string }) {
     if (!key) {
       // key未指定の場合はdefaultを実行
-      if (!this.didCreaterDefault) {
-        throw Error('Not found DidCreater')
+      if (!this.didCreaterDefaultKey) {
+        throw ErrorWithLog('Not found DidCreater')
       }
-      return this.didCreaterDefault.create({ endpointUrl, signingKeyId })
+      return this.didCreaterMap[this.didCreaterDefaultKey].create(signingKeyId)
     }
     if (key in this.didCreaterMap) {
-      return this.didCreaterMap[key].create({ endpointUrl, signingKeyId })
+      return this.didCreaterMap[key].create(signingKeyId)
     }
-    throw Error(`${key} not found in DidCreater`)
+    throw ErrorWithLog(`Not found in DidCreater: ${key}`)
+  }
+
+  /**
+   * DID解決
+   * @param did DID
+   * @returns
+   */
+  resolveDid(did: string) {
+    const { method } = DidObject.parseDid(did)
+    if (method in this.didResolverMap) {
+      return this.didResolverMap[method].resolve(did)
+    }
+    throw ErrorWithLog(`Not found in DidResolver: ${method}`)
   }
 }

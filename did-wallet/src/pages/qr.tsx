@@ -1,5 +1,4 @@
-import * as React from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { useDidContext, useSettingsContext } from '../layout/sideMenuLayout'
 import {
   Typography,
   Container,
@@ -8,9 +7,10 @@ import {
   Button,
   TextField,
 } from '@mui/material'
-import { QrReader } from 'react-qr-reader'
-import { useDidContext, useSettingsContext } from '../layout/sideMenuLayout'
 import base64url from 'base64url'
+import * as React from 'react'
+import { QrReader } from 'react-qr-reader'
+import { Navigate, useNavigate } from 'react-router-dom'
 
 const STATUS = {
   QR_READ: 0,
@@ -26,7 +26,7 @@ export const PageQr = () => {
   const settingsContext = useSettingsContext()
   const navigate = useNavigate()
 
-  if (!didContext.didModel) {
+  if (!didContext.didManage.didModel) {
     return <Navigate to="/" replace />
   }
 
@@ -46,7 +46,7 @@ export const PageQr = () => {
     if (!settingsContext.settings) {
       return
     }
-    if (!didContext.didModel) {
+    if (!didContext.didManage.didModel) {
       return
     }
 

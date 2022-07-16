@@ -1,4 +1,11 @@
-import * as React from 'react'
+import { DidModel, DidTool, PrivateKeyTool, VcTool } from '../helpers/didTools'
+import { Settings } from '../helpers/settings'
+import {
+  useNowLoadingContext,
+  useSettingsContext,
+  useDidContext,
+} from '../layout/sideMenuLayout'
+import { Create as IconCreate } from '@mui/icons-material'
 import {
   Typography,
   Container,
@@ -17,16 +24,8 @@ import {
   DialogActions,
   Divider,
 } from '@mui/material'
-import { Create as IconCreate } from '@mui/icons-material'
-
-import { Settings } from '../helpers/settings'
-import { DidModel, DidTool, PrivateKeyTool, VcTool } from '../helpers/didTools'
-import { newDefaultDidManager } from 'did-sdk'
-import {
-  useNowLoadingContext,
-  useSettingsContext,
-  useDidContext,
-} from '../layout/sideMenuLayout'
+import { DidManager, IonDidCreaterWithChallenge, IonDidResolver } from 'did-sdk'
+import * as React from 'react'
 
 export const PageTop = () => {
   const nowLoadingContext = useNowLoadingContext()
@@ -60,13 +59,19 @@ export const PageTop = () => {
     nowLoadingContext.setNowLoading(true)
 
     // 設定の読み込み
-    settingsContext.setSettings(await Settings.load())
+    const settings = await Settings.load()
+    settingsContext.setSettings(settings)
 
+    // DID Managerのセット
+    didContext.didManage.didMgr = new DidManager(
+      [new IonDidCreaterWithChallenge()],
+      [new IonDidResolver()]
+    )
     // DIDの読み込み
-    const didModel = await DidTool.load()
-    if (didModel) {
-      didContext.setDidModel(didModel)
-    }
+    didContext.didManage.didModel = await DidTool.load()
+
+    // DID Manageのセット
+    didContext.setDidManage(didContext.didManage)
 
     setTimeout(() => {
       nowLoadingContext.setNowLoading(false)
@@ -74,16 +79,14 @@ export const PageTop = () => {
   }
 
   const registerDid = async () => {
-    if (!settingsContext.settings) {
+    if (!settingsContext.settings || !didContext.didManage.didMgr) {
       return
     }
     nowLoadingContext.setNowLoading(true)
 
     // DID発行
     try {
-      const didMgr = newDefaultDidManager()
-      const didObject = await didMgr.createDid({
-        endpointUrl: settingsContext.settings.urlOperation,
+      const didObject = await didContext.didManage.didMgr.createDid({
         signingKeyId: 'sign-primary-key',
       })
 
@@ -105,11 +108,12 @@ export const PageTop = () => {
         )
       }
 
-      const didModel = DidModel.createByDidObject(didObject)
-      await DidTool.save(didModel)
+      // DID Modelを保存
+      didContext.didManage.didModel = DidModel.createByDidObject(didObject)
+      await DidTool.save(didContext.didManage.didModel)
 
       // コンテキストにも反映
-      didContext.setDidModel(didModel)
+      didContext.setDidManage(didContext.didManage)
 
       setOpenDidCreated(true)
     } catch (e) {
@@ -123,47 +127,50 @@ export const PageTop = () => {
   }
 
   const resolveDid = async () => {
-    if (!didContext.didModel) {
+    if (!didContext.didManage.didModel) {
       return
     }
-    return await _resolveDid(didContext.didModel.didShort)
+    return await _resolveDid(didContext.didManage.didModel.didShort)
   }
 
   const resolveDidLong = async () => {
-    if (!didContext.didModel) {
+    if (!didContext.didManage.didModel) {
       return
     }
-    return await _resolveDid(didContext.didModel.didLong)
+    return await _resolveDid(didContext.didManage.didModel.didLong)
   }
 
   const _resolveDid = async (did: string) => {
-    if (!settingsContext.settings) {
+    if (
+      !settingsContext.settings ||
+      !didContext.didManage.didMgr ||
+      !didContext.didManage.didModel
+    ) {
       return
     }
-    if (!didContext.didModel) {
-      return
-    }
+
     nowLoadingContext.setNowLoading(true)
 
-    const resolveDid = await DidTool.resolve(
-      settingsContext.settings.urlResolve,
-      did
-    )
-    if (!resolveDid.error) {
-      if (!didContext.didModel.published) {
+    let resolveResponse = ''
+    try {
+      const resolveDid = await didContext.didManage.didMgr.resolveDid(did)
+      resolveResponse = JSON.stringify(resolveDid, null, 2)
+      if (!didContext.didManage.didModel.published) {
         if (resolveDid.didDocumentMetadata.method.published) {
           // publishedの更新
-          didContext.didModel.published = true
-          didContext.setDidModel(didContext.didModel)
-          await DidTool.save(didContext.didModel)
+          didContext.didManage.didModel.published = true
+          didContext.setDidManage(didContext.didManage)
+          await DidTool.save(didContext.didManage.didModel)
         }
       }
+    } catch {
+      resolveResponse = 'DID Not found'
     }
 
     setTimeout(() => {
       setTextDialog({
         title: 'DID検証レスポンス',
-        text: JSON.stringify(resolveDid, null, 2),
+        text: resolveResponse,
       })
       setOpenDialog(true)
       nowLoadingContext.setNowLoading(false)
@@ -179,7 +186,8 @@ export const PageTop = () => {
     await DidTool.clear()
 
     // コンテキストにも反映
-    didContext.setDidModel(null)
+    didContext.didManage.didModel = null
+    didContext.setDidManage(didContext.didManage)
 
     setTimeout(() => {
       nowLoadingContext.setNowLoading(false)
@@ -190,7 +198,7 @@ export const PageTop = () => {
     setOpenDialog(false)
   }
 
-  if (!didContext.didModel) {
+  if (!didContext.didManage.didModel) {
     return (
       <>
         <Container maxWidth="sm" sx={{ paddingX: '8px' }}>
@@ -230,7 +238,7 @@ export const PageTop = () => {
     )
   }
 
-  const published = didContext.didModel.published ? (
+  const published = didContext.didManage.didModel.published ? (
     <Chip label="公開済" color="success" />
   ) : (
     <Chip label="未公開" color="warning" />
@@ -249,7 +257,7 @@ export const PageTop = () => {
                   label="DID"
                   fullWidth
                   multiline
-                  value={didContext.didModel.didShort}
+                  value={didContext.didManage.didModel.didShort}
                   InputProps={{
                     readOnly: true,
                   }}
