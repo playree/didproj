@@ -5,13 +5,12 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "type": "pwa-node",
+      "name": "Launch via NPM",
       "request": "launch",
-      "name": "Launch Program",
+      "runtimeArgs": ["run", "nodemon"],
+      "runtimeExecutable": "npm",
       "skipFiles": ["<node_internals>/**"],
-      "program": "${workspaceFolder}\\dist\\src\\index.js",
-      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
-      "preLaunchTask": "npm: build"
+      "type": "node"
     }
   ]
 }

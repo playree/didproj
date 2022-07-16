@@ -18,6 +18,7 @@ const didMgr = new DidManager(
 app.get(
   '/test',
   errorWrap(async (req: express.Request, res: express.Response) => {
+    console.log('abc')
     const result = await didMgr.resolveDid(
       'did:ion:EiDVUQ5t0urJOLPEcRTPMdKhRFDUlZucLSIC4VMkxZQ0eg'
     )
