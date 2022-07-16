@@ -1,6 +1,6 @@
-import { ErrorWithLog } from '../common/utils'
-import { DidDocument, JwkEs256k } from './didDocument'
-import { DidObject, IDidCreater, IDidResolver } from './didManager'
+import { ErrorWithLog } from '../common/utils.js'
+import { DidDocument, JwkEs256k } from './didDocument.js'
+import { DidObject, IDidCreater, IDidResolver } from './didManager.js'
 import {
   IonDid,
   IonKey,
