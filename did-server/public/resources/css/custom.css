@@ -1,0 +1,54 @@
+.didp-title {
+  display: inline-block;
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-left: 24px;
+  padding: 0 4px;
+  border-bottom: 1px solid #ccc;
+}
+
+.didp-padac::before {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 4px;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.didp-modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  z-index: 200;
+  pointer-events: none;
+  overflow: hidden;
+}
+.didp-modal>div {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  pointer-events: all;
+  transition: .4s;
+  -webkit-transition: .4s;
+}
+.didp-modal>div>div {
+  max-width: 540px;
+  margin: auto;
+  background-color: #fff;
+  padding: 0.5rem;
+  margin-top: 1rem;
+}
+.didp-modal[closed]>div {
+  top: -100%;
+  opacity: 0;
+}
+.didp-modal[closed][reverse]>div {
+  top: 100%;
+}

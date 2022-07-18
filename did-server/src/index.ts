@@ -1,6 +1,6 @@
-import { errorHandler, errorWrap } from './middlewares/errorHandler'
+import { errorHandler } from './middlewares/errorHandler'
+import { setViewRoutings } from './router'
 import cors from 'cors'
-import { DidManager, IonDidCreaterWithChallenge, IonDidResolver } from 'did-sdk'
 import express from 'express'
 
 const app = express()
@@ -10,29 +10,8 @@ app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
-const didMgr = new DidManager(
-  [new IonDidCreaterWithChallenge()],
-  [new IonDidResolver()]
-)
-
-app.get(
-  '/test',
-  errorWrap(async (req: express.Request, res: express.Response) => {
-    console.log('abc')
-    const result = await didMgr.resolveDid(
-      'did:ion:EiDVUQ5t0urJOLPEcRTPMdKhRFDUlZucLSIC4VMkxZQ0eg'
-    )
-    console.log(result)
-    res.send('OK')
-  })
-)
-
-app.get(
-  '/error',
-  errorWrap(async () => {
-    throw Error('error test.')
-  })
-)
+// 画面のルーティング
+setViewRoutings(app)
 
 // エラーハンドリング
 app.use(errorHandler)

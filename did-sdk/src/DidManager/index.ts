@@ -11,6 +11,7 @@ import {
   IonDidCreaterWithChallenge,
   IonDidResolver,
 } from './ionDidManager'
+import { EntityStyles } from './walletRendering'
 
 export {
   DidDocument,
@@ -23,4 +24,5 @@ export {
   IonDidCreaterNoChallenge,
   IonDidCreaterWithChallenge,
   IonDidResolver,
+  EntityStyles,
 }

@@ -1,3 +1,5 @@
 # DID Server
 
-# 構成
+# Issuer
+
+# Verifier

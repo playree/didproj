@@ -7,6 +7,7 @@ import {
   IonDidCreaterNoChallenge,
   IonDidCreaterWithChallenge,
   IonDidResolver,
+  EntityStyles,
 } from './DidManager/'
 
 export {
@@ -18,4 +19,5 @@ export {
   IonDidCreaterNoChallenge,
   IonDidCreaterWithChallenge,
   IonDidResolver,
+  EntityStyles,
 }

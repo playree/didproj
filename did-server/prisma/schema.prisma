@@ -7,15 +7,51 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  url      = "file:./db.sqlite3"
 }
 
 model Issuer {
-  id           String   @id @default(uuid())
-  name         String
-  didString    String
-  didPublished Boolean
-  privateKey   String
-  updatedAt    DateTime @updatedAt
-  createdAt    DateTime @default(now())
+  id            String   @id @default(uuid())
+  name          String
+  didObjectJson String
+  stylesJson    String
+  updatedAt     DateTime @updatedAt
+  createdAt     DateTime @default(now())
+
+  // Relation
+  credentialManifest CredentialManifest[]
+}
+
+model CredentialManifest {
+  id                   String   @id @default(uuid())
+  issuerId             String
+  outputDescriptorJson String
+  updatedAt            DateTime @updatedAt
+  createdAt            DateTime @default(now())
+
+  // Relation
+  issuer               Issuer                 @relation(fields: [issuerId], references: [id])
+  verifiableCredential VerifiableCredential[]
+}
+
+model VerifiableCredential {
+  id                    String   @id @default(uuid())
+  credentialManifestId  String
+  credentialSubjectJson String
+  createdAt             DateTime @default(now())
+
+  // Relation
+  credentialManifest         CredentialManifest           @relation(fields: [credentialManifestId], references: [id])
+  verifiableCredentialStatus VerifiableCredentialStatus[]
+}
+
+model VerifiableCredentialStatus {
+  id                     Int      @id @default(autoincrement())
+  verifiableCredentialId String
+  status                 String
+  reason                 String
+  createdAt              DateTime @default(now())
+
+  // Relation
+  verifiableCredential VerifiableCredential @relation(fields: [verifiableCredentialId], references: [id])
 }

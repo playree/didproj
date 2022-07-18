@@ -80,6 +80,27 @@ export class DidObject {
     )
   }
 
+  static createByJsonString(jsonString: string) {
+    const {
+      scheme,
+      method,
+      didSuffix,
+      longFormSuffixData,
+      signingKeyId,
+      published,
+      keys,
+    } = JSON.parse(jsonString)
+    return new DidObject(
+      scheme,
+      method,
+      didSuffix,
+      longFormSuffixData,
+      signingKeyId,
+      published,
+      keys
+    )
+  }
+
   get did() {
     return this.published ? this.didShort : this.didLong
   }
