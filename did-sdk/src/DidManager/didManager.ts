@@ -126,7 +126,7 @@ export class DidObject {
 /**
  * DID生成インターフェース
  */
-export interface IDidCreater {
+export interface DidCreater {
   get key(): string
   create(signingKeyId: string): Promise<DidObject>
 }
@@ -134,7 +134,7 @@ export interface IDidCreater {
 /**
  * DID解決インターフェース
  */
-export interface IDidResolver {
+export interface DidResolver {
   get key(): string
   resolve(did: string): Promise<DidDocument>
 }
@@ -143,11 +143,11 @@ export interface IDidResolver {
  * DIDの各種操作を提供する
  */
 export class DidManager {
-  private didCreaterMap: Record<string, IDidCreater>
+  private didCreaterMap: Record<string, DidCreater>
   private didCreaterDefaultKey: string
-  private didResolverMap: Record<string, IDidResolver>
+  private didResolverMap: Record<string, DidResolver>
 
-  constructor(createrList: IDidCreater[], resolverList: IDidResolver[]) {
+  constructor(createrList: DidCreater[], resolverList: DidResolver[]) {
     // CreaterMapの作成
     this.didCreaterMap = {}
     this.didCreaterDefaultKey = createrList ? createrList[0].key : ''

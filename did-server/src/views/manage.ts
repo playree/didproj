@@ -1,6 +1,6 @@
 import { didMgr } from '../didMgr'
 import { PrismaClient, Issuer, CredentialManifest } from '@prisma/client'
-import { DidObject, EntityStyles } from 'did-sdk'
+import { DidObject, EntityStyles, OutputDescriptor } from 'did-sdk'
 import express from 'express'
 
 const prisma = new PrismaClient()
@@ -72,7 +72,7 @@ export const postManageIssuer = async (
 }
 
 type CredentialManifestP = CredentialManifest & {
-  outputDescriptor?: EntityStyles
+  outputDescriptor?: OutputDescriptor
 }
 
 const OUTPUT_DESCRIPTIOR_SAMPLE = {
@@ -128,5 +128,75 @@ export const getManageCredentialManifest = async (
       null,
       2
     ),
+  })
+}
+
+export const postManageCredentialManifest = async (
+  req: express.Request,
+  res: express.Response
+) => {
+  if (req.body._save !== undefined) {
+    const outputDescriptor: OutputDescriptor = JSON.parse(
+      req.body.output_descriptor
+    )
+
+    if (req.body.id) {
+      // 更新
+      const credentialManifest = await prisma.credentialManifest.update({
+        where: { id: req.body.id },
+        data: {
+          name: req.body.name,
+          outputDescriptorJson: JSON.stringify(outputDescriptor),
+        },
+      })
+      console.log('CredentialManifest updated: %o', credentialManifest)
+    } else {
+      // 新規
+
+      // CredentialManifest登録
+      const credentialManifest = await prisma.credentialManifest.create({
+        data: {
+          issuerId: req.body.issuer_id,
+          name: req.body.name,
+          outputDescriptorJson: JSON.stringify(outputDescriptor),
+        },
+      })
+      console.log('CredentialManifest created: %o', credentialManifest)
+    }
+  }
+
+  res.redirect('.')
+}
+
+export const getOpenidConfigration = async (
+  req: express.Request,
+  res: express.Response
+) => {
+  const manifestId = req.params.manifest_id
+
+  // CredentialManifest取得
+  const credentialManifest = await prisma.credentialManifest.findUnique({
+    where: { id: manifestId },
+    include: { issuer: true },
+  })
+  console.log('CredentialManifest selected: %o', credentialManifest)
+
+  if (!credentialManifest) {
+    return res.status(404).send()
+  }
+
+  const outputDescriptor = JSON.parse(credentialManifest.outputDescriptorJson)
+
+  res.json({
+    credential_manifests: [
+      {
+        id: credentialManifest.id,
+        issuer: {
+          id: credentialManifest.issuer.id,
+          name: credentialManifest.issuer.name,
+        },
+        output_descriptors: [outputDescriptor],
+      },
+    ],
   })
 }

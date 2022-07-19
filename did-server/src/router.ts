@@ -4,6 +4,8 @@ import {
   getManageIssuer,
   postManageIssuer,
   getManageCredentialManifest,
+  postManageCredentialManifest,
+  getOpenidConfigration,
 } from './views/manage'
 import express from 'express'
 import path from 'path'
@@ -19,6 +21,11 @@ export const setViewRoutings = (app: express.Express) => {
 
   app.get('/', errorWrap(pageTop))
 
+  app.get(
+    '/.well-known/openid-configuration/:manifest_id',
+    errorWrap(getOpenidConfigration)
+  )
+
   app
     .route('/manage/issuer')
     .get(errorWrap(getManageIssuer))
@@ -27,6 +34,7 @@ export const setViewRoutings = (app: express.Express) => {
   app
     .route('/manage/issuer/:issuer_id/cm')
     .get(errorWrap(getManageCredentialManifest))
+    .post(errorWrap(postManageCredentialManifest))
 
   const issuerRt = express.Router()
   app.use(issuerRt)

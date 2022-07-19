@@ -1,4 +1,4 @@
-interface EntityStyles {
+export type EntityStyles = {
   thumbnail?: {
     uri: string
     alt?: string
@@ -15,4 +15,23 @@ interface EntityStyles {
   }
 }
 
-export { EntityStyles }
+export type DisplayMapping = {
+  path: unknown // @todo JSONPath
+  schema: {
+    type: string
+  }
+  fallback: string
+}
+
+export type DataDisplay = {
+  title?: DisplayMapping
+  subtitle?: DisplayMapping
+  description?: DisplayMapping
+}
+
+export type OutputDescriptor = {
+  id: string
+  schema: string
+  display: DataDisplay
+  styles: EntityStyles
+}
