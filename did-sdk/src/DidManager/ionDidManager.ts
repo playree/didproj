@@ -1,6 +1,6 @@
 import { ErrorWithLog } from '../common/utils.js'
 import { DidDocument, JwkEs256k } from './didDocument.js'
-import { DidObject, DidCreater, DidResolver } from './didManager.js'
+import { DidObject, IDidCreater, IDidResolver } from './didManager.js'
 import {
   IonDid,
   IonKey,
@@ -15,7 +15,7 @@ import urljoin from 'url-join'
 /**
  * DID Creater(ION Challengeあり版)
  */
-export class IonDidCreaterWithChallenge implements DidCreater {
+export class IonDidCreaterWithChallenge implements IDidCreater {
   get key() {
     return 'ion-with-challenge'
   }
@@ -156,7 +156,7 @@ export class IonDidCreaterWithChallenge implements DidCreater {
 /**
  * DID Creater(ION Challengeなし版)
  */
-export class IonDidCreaterNoChallenge implements DidCreater {
+export class IonDidCreaterNoChallenge implements IDidCreater {
   get key() {
     return 'ion-no-challenge'
   }
@@ -244,7 +244,7 @@ export class IonDidCreaterNoChallenge implements DidCreater {
 /**
  * DID Resolver(ION)
  */
-export class IonDidResolver implements DidResolver {
+export class IonDidResolver implements IDidResolver {
   get key() {
     return 'ion'
   }
