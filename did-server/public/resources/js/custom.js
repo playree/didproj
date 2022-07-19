@@ -10,10 +10,18 @@ function setModalValues(modal_id, values_id = '') {
     if (values) {
       const item = values.querySelector('[name="' + targets[i].name + '"]');
       if (item) {
-        targets[i].value = item.value;
+        if (targets[i].tagName == 'textarea') {
+          targets[i].innerHTML = item.innerHTML;
+        } else {
+          targets[i].value = item.value;
+        }
         continue;    
       }
     }
-    targets[i].value = '';
+    if (targets[i].tagName == 'textarea') {
+      targets[i].innerHTML = '';
+    } else {
+      targets[i].value = '';
+    }
   }
 }

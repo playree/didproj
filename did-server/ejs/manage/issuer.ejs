@@ -27,17 +27,37 @@
       <div class="didp-padac kk-margin-top-ss">
         <span class="kk-font-bold">ID: </span><%= issuer.id %>
       </div>
+      <div class="didp-padac kk-margin-top-ss">
+        <span class="kk-font-bold">Background: </span><%= issuer.styles.background.color %>
+        <span class="kk-margin-right"></span>
+        <span class="kk-font-bold">Text: </span><%= issuer.styles.text.color %>
+      </div>
       <div class="kk-accordion kk-margin-top-ss" theme="icon" closed>
         <span class="kk-font-bold">DID: </span><%= issuer.didObject.didShort %>
       </div>
       <div class="didp-padac kk-margin-top-ss">
-        <textarea id="text1" class="kk-textarea" rows="8" readonly><%= issuer.didObject.didLong %></textarea>
+        <textarea class="kk-textarea didp-code" rows="7" readonly><%= issuer.didObject.didLong %></textarea>
+      </div>
+      <div class="didp-padac kk-margin-top-ss">
+        <span class="kk-font-bold">Published: </span><%= issuer.didObject.published %>
+      </div>
+      <div class="kk-accordion kk-margin-top-ss" theme="icon" closed>
+        <span class="kk-font-bold">SigningKey: </span><%= issuer.didObject.signingKeyId %>
+      </div>
+      <div class="didp-padac kk-margin-top-ss">
+        <textarea class="kk-textarea didp-code" rows="7" readonly><%= JSON.stringify(issuer.didObject.keys.signing.private,null,2) %></textarea>
+      </div>
+      <div class="didp-padac kk-margin-top-ss">
+        <span class="kk-font-bold">Created: </span><%= issuer.createdAt %>
       </div>
 
       <div class="kk-margin-top">
         <button class="kk-button" fit onclick="openEditModal('<%= issuer.id %>');">
           <span class="material-symbols-outlined kk-margin-right-ss">edit</span>編集
         </button>
+        <a class="kk-button" fit href="/manage/issuer/<%= issuer.id %>/cm/">
+          <span class="material-symbols-outlined kk-margin-right-ss">style</span>CredentialManifest
+        </a>
       </div>
     </div>
     <% } %>
@@ -59,7 +79,7 @@
           <div class="kk-col12" cell>
             <div class="kk-input-field">
               <input name="name" class="kk-input _values" type="text" maxlength="40" required>
-              <label class="kk-input-label">Issuer名称</label>
+              <label class="kk-input-label">名称</label>
             </div>
           </div>
           <div class="kk-col3" cell>

@@ -25,6 +25,7 @@ model Issuer {
 model CredentialManifest {
   id                   String   @id @default(uuid())
   issuerId             String
+  name                 String
   outputDescriptorJson String
   updatedAt            DateTime @updatedAt
   createdAt            DateTime @default(now())
