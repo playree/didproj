@@ -11,7 +11,7 @@
 <div class="kk-sidenav-main kk-padding-s">
   <div class="kk-container kk-padding-s" size-s left>
     <div class="didp-title kk-margin-right">Issuer管理</div>
-    <button class="kk-button" fit onclick="openAddModal();">
+    <button class="kk-button" type="button" fit onclick="openAddModal();">
       <span class="material-symbols-outlined kk-margin-right-ss">add_business</span>新規追加
     </button>
 
@@ -42,17 +42,17 @@
         <span class="kk-font-bold">Published: </span><%= issuer.didObject.published %>
       </div>
       <div class="kk-accordion kk-margin-top-ss" theme="icon" closed>
-        <span class="kk-font-bold">SigningKey: </span><%= issuer.didObject.signingKeyId %>
+        <span class="kk-font-bold">Keys: </span>(SigningKeyId = <%= issuer.didObject.signingKeyId %>)
       </div>
       <div class="didp-padac kk-margin-top-ss">
-        <textarea class="kk-textarea didp-code" rows="7" readonly><%= JSON.stringify(issuer.didObject.keys.signing.private,null,2) %></textarea>
+        <textarea class="kk-textarea didp-code" rows="7" readonly><%= JSON.stringify(issuer.didObject.keys,null,2) %></textarea>
       </div>
       <div class="didp-padac kk-margin-top-ss">
         <span class="kk-font-bold">Created: </span><%= issuer.createdAt %>
       </div>
 
       <div class="kk-margin-top">
-        <button class="kk-button" fit onclick="openEditModal('<%= issuer.id %>');">
+        <button class="kk-button" type="button" fit onclick="openEditModal('<%= issuer.id %>');">
           <span class="material-symbols-outlined kk-margin-right-ss">edit</span>編集
         </button>
         <a class="kk-button" fit href="/manage/issuer/<%= issuer.id %>/cm/">

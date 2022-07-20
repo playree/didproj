@@ -10,7 +10,12 @@
       "runtimeArgs": ["run", "nodemon"],
       "runtimeExecutable": "npm",
       "skipFiles": ["<node_internals>/**"],
-      "type": "node"
+      "type": "node",
+      "outFiles": [
+        "${workspaceFolder}/**/*.js",
+        "${workspaceFolder}/../did-sdk/**/*.js",
+        "!**/node_modules/**"
+      ]
     }
   ]
 }
