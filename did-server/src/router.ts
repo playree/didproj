@@ -1,6 +1,6 @@
 import { errorWrap } from './middlewares/errorHandler'
 import { pageTop } from './views/'
-import { getOpenidConfigration } from './views/issuer'
+import { getOpenidConfigration, getIssuer } from './views/issuer'
 import {
   getManageIssuer,
   postManageIssuer,
@@ -27,6 +27,7 @@ export const setViewRoutings = (app: express.Express) => {
     '/.well-known/openid-configuration/:manifest_id',
     errorWrap(getOpenidConfigration)
   )
+  app.get('/issuer', errorWrap(getIssuer))
 
   // Tools
   app.route('/tools').get(errorWrap(getTools)).post(errorWrap(postTools))

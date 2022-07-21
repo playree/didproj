@@ -1,0 +1,12 @@
+<div class="kk-card" size-s
+  style="
+    border: solid 1px #ccc; 
+    background-color: <%= output.styles.background.color || '#ffffff' %>; 
+    color: <%= output.styles.text.color || '#444444' %>; "
+>
+  <div class="kk-card-title">
+    <%= output.display.title.fallback %>
+    <div style="font-size: 1rem;"><%= output.display.subtitle.fallback %></div>
+  </div>
+  <p><%= output.display.description.text %></p>
+</div>

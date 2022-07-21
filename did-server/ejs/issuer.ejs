@@ -12,7 +12,12 @@
   <div class="kk-container kk-padding-s" size-s left>
     <div class="didp-title kk-margin-right">VC発行</div>
 
-    
+    <% for (issuer of issuerList) { %>
+    <div class="kk-accordion kk-margin-top evms-icon-line" theme="icon">
+      <span class="material-symbols-outlined">badge</span>
+      <span><%= issuer.name %>(<%= issuer.id %>)</span>
+    </div>
+    <% } %> 
 
   </div>
 </div>

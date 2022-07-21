@@ -62,21 +62,31 @@ const OUTPUT_DESCRIPTIOR_SAMPLE = {
   id: 'driver_license_output',
   schema: 'https://schema.org/EducationalOccupationalCredential',
   display: {
-    path: ['$.name', '$.vc.name'],
-    schema: {
-      type: 'string',
+    title: {
+      path: ['$.name', '$.vc.name'],
+      schema: {
+        type: 'string',
+      },
+      fallback: 'Washington State Driver License',
     },
-    fallback: 'Washington State Driver License',
-  },
-  subtitle: {
-    path: ['$.class', '$.vc.class'],
-    schema: {
-      type: 'string',
+    subtitle: {
+      path: ['$.class', '$.vc.class'],
+      schema: {
+        type: 'string',
+      },
+      fallback: 'Class A, Commercial',
     },
-    fallback: 'Class A, Commercial',
+    description: {
+      text: 'License to operate a vehicle with a gross combined weight rating',
+    },
   },
-  description: {
-    text: 'License to operate a vehicle with a gross combined weight rating',
+  styles: {
+    background: {
+      color: '#444444s',
+    },
+    text: {
+      color: '#ffffff',
+    },
   },
 }
 

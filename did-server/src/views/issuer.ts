@@ -49,7 +49,7 @@ export const getIssuer = async (
   })
   console.log('Issuer selected: %d', issuerList.length)
 
-  res.render('manage/issuer', {
+  res.render('issuer', {
     issuerList,
   })
 }
