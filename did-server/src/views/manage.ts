@@ -1,29 +1,18 @@
 import { didMgr, prisma } from '../common'
-import { Issuer, CredentialManifest } from '@prisma/client'
 import { DidObject, EntityStyles, OutputDescriptor } from 'did-sdk'
 import express from 'express'
-
-type IssuerP = Issuer & {
-  styles?: EntityStyles
-  didObject?: DidObject
-}
 
 export const getManageIssuer = async (
   _req: express.Request,
   res: express.Response
 ) => {
   // Issuer全件取得
-  const issuerList: IssuerP[] = await prisma.issuer.findMany()
+  const issuerList = await prisma.issuer.findMany()
   console.log('Issuer selected: %d', issuerList.length)
-
-  // JSON項目のParse
-  for (const issuer of issuerList) {
-    issuer.styles = JSON.parse(issuer.stylesJson)
-    issuer.didObject = DidObject.createByJsonString(issuer.didObjectJson)
-  }
 
   res.render('manage/issuer', {
     issuerList,
+    createByJsonString: DidObject.createByJsonString,
   })
 }
 
@@ -69,10 +58,6 @@ export const postManageIssuer = async (
   res.redirect('.')
 }
 
-type CredentialManifestP = CredentialManifest & {
-  outputDescriptor?: OutputDescriptor
-}
-
 const OUTPUT_DESCRIPTIOR_SAMPLE = {
   id: 'driver_license_output',
   schema: 'https://schema.org/EducationalOccupationalCredential',
@@ -106,17 +91,11 @@ export const getManageCredentialManifest = async (
   console.log('Issuer selected: %o', issuer)
 
   // CredentialManifest全件取得
-  const credentialManifestList: CredentialManifestP[] =
-    await prisma.credentialManifest.findMany({
-      where: {
-        issuerId,
-      },
-    })
-
-  // JSON項目のParse
-  for (const manifest of credentialManifestList) {
-    manifest.outputDescriptor = JSON.parse(manifest.outputDescriptorJson)
-  }
+  const credentialManifestList = await prisma.credentialManifest.findMany({
+    where: {
+      issuerId,
+    },
+  })
 
   res.render('manage/credentialManifest', {
     issuer,
