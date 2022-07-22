@@ -1,0 +1,13 @@
+<%
+  const orDefault = function(obj, propString, defaultValue = '') {
+    const props = propString.split('.')
+    let ret = obj
+    for (item of props) {
+      if (!ret[item]) {
+        return defaultValue
+      }
+      ret = ret[item]
+    }
+    return ret
+  }
+%> 
