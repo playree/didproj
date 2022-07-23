@@ -1,14 +1,29 @@
-<%- include('./functions') %>
-
-<div class="kk-card" size-s
-  style="
-    border: solid 1px #ccc; 
-    background-color: <%= orDefault(output, 'styles.background.color', '#ffffff') %>; 
-    color: <%= orDefault(output, 'styles.text.color', '#444444') %>; "
+<div style="
+  max-width: <%= param.maxWidth || '540px' %>;
+  padding: 0.5rem;
+  border: solid 1px #ccc; 
+  background-color: <%= func.orDefault(output, 'styles.background.color', '#ffffff') %>; 
+  color: <%= func.orDefault(output, 'styles.text.color', '#444444') %>; "
 >
-  <div class="kk-card-title">
-    <%= orDefault(output, 'display.title.fallback', 'No title') %>
-    <div style="font-size: 1rem;"><%= orDefault(output, 'display.subtitle.fallback', 'No subtitle') %></div>
+  <div style="
+    white-space: nowrap;
+    overflow: hidden;
+    font-size: 1.2rem; 
+    font-weight: bold;"
+  >
+    <%= func.orDefault(output, 'display.title.fallback', 'No title') %>
   </div>
-  <p><%= orDefault(output, 'display.description.text', 'No description') %></p>
+  <div style="
+    white-space: nowrap;
+    overflow: hidden;
+    font-size: 1rem;"
+  >
+    - <%= func.orDefault(output, 'display.subtitle.fallback', 'No subtitle') %>
+  </div>
+
+  <% if (!param.isNoDescription) { %> 
+  <div style="font-size: 1rem; margin-top: 1rem;">
+    <%= func.orDefault(output, 'display.description.text', 'No description') %>
+  </div>
+  <% } %> 
 </div>

@@ -1,4 +1,4 @@
-import { didMgr, prisma } from '../common'
+import { didMgr, prisma, createEjsOpt } from '../common'
 import { DidObject, EntityStyles, OutputDescriptor } from 'did-sdk'
 import express from 'express'
 
@@ -10,10 +10,13 @@ export const getManageIssuer = async (
   const issuerList = await prisma.issuer.findMany()
   console.log('Issuer selected: %d', issuerList.length)
 
-  res.render('manage/issuer', {
-    issuerList,
-    createByJsonString: DidObject.createByJsonString,
-  })
+  res.render(
+    'manage/issuer',
+    createEjsOpt({
+      issuerList,
+      createByJsonString: DidObject.createByJsonString,
+    })
+  )
 }
 
 export const postManageIssuer = async (
@@ -107,15 +110,18 @@ export const getManageCredentialManifest = async (
     },
   })
 
-  res.render('manage/credentialManifest', {
-    issuer,
-    credentialManifestList,
-    outputDescriptorSampleJson: JSON.stringify(
-      OUTPUT_DESCRIPTIOR_SAMPLE,
-      null,
-      2
-    ),
-  })
+  res.render(
+    'manage/credentialManifest',
+    createEjsOpt({
+      issuer,
+      credentialManifestList,
+      outputDescriptorSampleJson: JSON.stringify(
+        OUTPUT_DESCRIPTIOR_SAMPLE,
+        null,
+        2
+      ),
+    })
+  )
 }
 
 export const postManageCredentialManifest = async (

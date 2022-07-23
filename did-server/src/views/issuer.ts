@@ -1,3 +1,4 @@
+import { createEjsOpt } from '../common'
 import { PrismaClient } from '@prisma/client'
 import express from 'express'
 
@@ -49,7 +50,10 @@ export const getIssuer = async (
   })
   console.log('Issuer selected: %d', issuerList.length)
 
-  res.render('issuer', {
-    issuerList,
-  })
+  res.render(
+    'issuer',
+    createEjsOpt({
+      issuerList,
+    })
+  )
 }

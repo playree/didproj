@@ -17,7 +17,7 @@
 
     <% 
       for (const issuer of issuerList) { 
-        const didObject = createByJsonString(issuer.didObjectJson)
+        const didObject = func.createByJsonString(issuer.didObjectJson)
         const styles = JSON.parse(issuer.stylesJson)
     %>
     <div id="<%= issuer.id %>" class="kk-card kk-shadow kk-margin-top" 

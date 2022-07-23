@@ -13,9 +13,22 @@
     <div class="didp-title kk-margin-right">VC発行</div>
 
     <% for (issuer of issuerList) { %>
-    <div class="kk-accordion kk-margin-top evms-icon-line" theme="icon">
-      <span class="material-symbols-outlined">badge</span>
-      <span><%= issuer.name %>(<%= issuer.id %>)</span>
+    <div class="kk-accordion kk-margin-top kk-flex" theme="icon">
+      <span class="kk-margin-right-ss material-symbols-outlined">account_balance</span>
+      <span><%= issuer.name %></span>
+    </div>
+    <div class="kk-margin-left-l" grid-col>
+      <% 
+        for (manifest of issuer.credentialManifest) {
+          const outputDescriptor = JSON.parse(manifest.outputDescriptorJson)
+      %>
+      <div class="kk-col6@s kk-col12" cell>
+        <div class="kk-flex"><span class="kk-margin-right-ss material-symbols-outlined">badge</span><%= manifest.name %></div>
+        <a href="/issuer/vc/<%= issuer.id %>">
+          <%- include('./partials/vcDisplay', {output: outputDescriptor, param: {isNoDescription: true}}); %>
+        </a>
+      </div>
+      <% } %> 
     </div>
     <% } %> 
 

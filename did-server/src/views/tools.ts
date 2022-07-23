@@ -1,4 +1,4 @@
-import { didMgr } from '../common'
+import { didMgr, createEjsOpt } from '../common'
 import { IonDid, IonPublicKeyPurpose } from '@decentralized-identity/ion-sdk'
 import express from 'express'
 
@@ -6,7 +6,7 @@ export const getTools = async (
   _req: express.Request,
   res: express.Response
 ) => {
-  res.render('tools')
+  res.render('tools', createEjsOpt())
 }
 
 const postResolve = async (req: express.Request, res: express.Response) => {
